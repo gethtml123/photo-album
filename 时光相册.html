@@ -508,14 +508,15 @@ body {
 footer {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  height: 60px;
+  padding: 10px 0;
   background: rgba(10,10,15,0.9);
   backdrop-filter: blur(12px);
   border-top: 1px solid rgba(201,169,110,0.1);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 30px;
+  gap: 5px;
   z-index: 100;
   font-size: 13px;
   color: #666;
@@ -681,10 +682,12 @@ input[type="file"] { display: none; }
 
   <!-- 底部固定栏 -->
   <footer>
-    <div class="deco"></div>
-    <span>时光相册</span>
-    <div class="deco"></div>
-    <div style="margin-top:8px;font-size:12px;opacity:.6" id="uptime"></div>
+    <div style="display:flex;align-items:center;gap:30px">
+      <div class="deco"></div>
+      <span>时光相册</span>
+      <div class="deco"></div>
+    </div>
+    <div style="font-size:11px;opacity:.6">{{ uptimeText }}</div>
   </footer>
 </div>
 
@@ -694,6 +697,7 @@ const { createApp } = Vue;
 createApp({
   data() {
     return {
+      uptimeText: '',
       // 轮播图：用户把自己的横幅图放到 assets/ 下命名为 banner-1.jpg ~ banner-7.jpg
       banners: [
         'assets/banner-1.jpg',
@@ -723,13 +727,13 @@ createApp({
     };
   },
   mounted() {
+    this.startUptime();
     this.initStars();
     this.startBannerAuto();
     this.tryPlayBgm();
     this.initDB().then(() => { this.loadPhotos(); this.loadMoods(); });
     this.initCustomCursor();
     this.initTilt();
-    this.startUptime();
     window.addEventListener('keydown', e => {
       if (!this.lightbox.show) return;
       if (e.key === 'ArrowLeft') this.lightboxPrev();
@@ -741,14 +745,13 @@ createApp({
     // ===== 运行时长 =====
     startUptime() {
       const start = new Date('2026-10-24T20:00:00+08:00').getTime();
-      const el = document.getElementById('uptime');
       const tick = () => {
         const diff = Date.now() - start;
         const d = Math.floor(diff / 86400000);
         const h = Math.floor(diff % 86400000 / 3600000);
         const m = Math.floor(diff % 3600000 / 60000);
         const s = Math.floor(diff % 60000 / 1000);
-        el.textContent = `本网站已运行 ${d}天 ${h}时 ${m}分 ${s}秒`;
+        this.uptimeText = `本网站已运行 ${d}天 ${h}时 ${m}分 ${s}秒`;
       };
       tick();
       setInterval(tick, 1000);
