@@ -689,21 +689,6 @@ input[type="file"] { display: none; }
 </div>
 
 <script>
-// 运行时长统计
-(function(){
-  const start = new Date('2026-10-24T20:00:00+08:00').getTime();
-  const el = document.getElementById('uptime');
-  function tick(){
-    const diff = Date.now() - start;
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor(diff % 86400000 / 3600000);
-    const m = Math.floor(diff % 3600000 / 60000);
-    const s = Math.floor(diff % 60000 / 1000);
-    el.textContent = `本网站已运行 ${d}天 ${h}时 ${m}分 ${s}秒`;
-  }
-  tick(); setInterval(tick, 1000);
-})();
-
 const { createApp } = Vue;
 
 createApp({
@@ -744,6 +729,7 @@ createApp({
     this.initDB().then(() => { this.loadPhotos(); this.loadMoods(); });
     this.initCustomCursor();
     this.initTilt();
+    this.startUptime();
     window.addEventListener('keydown', e => {
       if (!this.lightbox.show) return;
       if (e.key === 'ArrowLeft') this.lightboxPrev();
@@ -752,6 +738,21 @@ createApp({
     });
   },
   methods: {
+    // ===== 运行时长 =====
+    startUptime() {
+      const start = new Date('2026-10-24T20:00:00+08:00').getTime();
+      const el = document.getElementById('uptime');
+      const tick = () => {
+        const diff = Date.now() - start;
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor(diff % 86400000 / 3600000);
+        const m = Math.floor(diff % 3600000 / 60000);
+        const s = Math.floor(diff % 60000 / 1000);
+        el.textContent = `本网站已运行 ${d}天 ${h}时 ${m}分 ${s}秒`;
+      };
+      tick();
+      setInterval(tick, 1000);
+    },
     // ===== 自定义鼠标 =====
     initCustomCursor() {
       const dot = document.getElementById('cursorDot');
