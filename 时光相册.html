@@ -895,7 +895,12 @@ createApp({
       return new Promise(resolve => {
         const tx = this.db.transaction('moods', 'readonly');
         const req = tx.objectStore('moods').getAll();
-        req.onsuccess = () => { this.moods = req.result || []; resolve(); };
+        req.onsuccess = () => {
+          const list = req.result || [];
+          list.sort((a, b) => b.createdAt - a.createdAt);
+          this.moods = list;
+          resolve();
+        };
         req.onerror = () => resolve();
       });
     },
