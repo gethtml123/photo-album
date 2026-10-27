@@ -698,8 +698,8 @@ createApp({
   data() {
     return {
       uptimeText: '',
-      // 轮播图：用户把自己的横幅图放到 assets/ 下命名为 banner-1.jpg ~ banner-7.jpg
-      banners: [
+      // 默认轮播图
+      defaultBanners: [
         'assets/banner-1.jpg',
         'assets/banner-2.jpg',
         'assets/banner-3.jpg',
@@ -740,6 +740,19 @@ createApp({
       if (e.key === 'ArrowRight') this.lightboxNext();
       if (e.key === 'Escape') this.closeLightbox();
     });
+  },
+  computed: {
+    banners() {
+      // 有用户照片就轮播用户照片，否则用默认图
+      let list = this.defaultBanners;
+      if (this.photos && this.photos.length > 0) {
+        list = this.photos.map(p => p.src);
+      }
+      if (this.currentBanner >= list.length) {
+        this.currentBanner = 0;
+      }
+      return list;
+    }
   },
   methods: {
     // ===== 运行时长 =====
