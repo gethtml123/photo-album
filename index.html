@@ -100,6 +100,15 @@ body {
 .carousel-slide {
   position: absolute;
   inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 0.6s ease;
+  filter: blur(30px) brightness(0.6);
+  transform: scale(1.2);
+}
+.carousel-slide-inner {
+  position: absolute;
+  inset: 0;
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
@@ -214,21 +223,22 @@ body {
   letter-spacing: 1px;
 }
 
-/* 照片瀑布流 */
+/* 照片墙：等宽网格 + 按图片比例自动占行，避免照片一多就高低错乱 */
 .wall-grid {
-  columns: 4;
-  column-gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-auto-rows: 8px;          /* 行高基准，具体占几行由 JS 按图片比例算 */
+  gap: 18px;
   max-width: 1200px;
   margin: 0 auto;
   transform-style: preserve-3d;
   perspective: 1000px;
 }
 .photo-card {
-  break-inside: avoid;
   border-radius: 14px;
   overflow: hidden;
   position: relative;
-  margin-bottom: 16px;
+  margin-bottom: 0;
   border: 3px solid #b9b7b4;
   box-shadow: 0 15px 35px rgba(0,0,0,0.6);
   transition: box-shadow .3s, transform .1s ease-out, border-color .3s;
@@ -527,25 +537,334 @@ footer .deco {
   width: 50px; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(201,169,110,0.3), transparent);
 }
+/* ===== 备份区（照片墙下方的常驻提示） ===== */
+.backup-section {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px 30px;
+}
+.backup-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 26px;
+  padding: 24px 28px;
+  border: 1px solid rgba(201,169,110,0.25);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(201,169,110,0.08), rgba(201,169,110,0.02));
+  flex-wrap: wrap;
+}
+.backup-heading {
+  font-size: 16px;
+  color: #e8d5a8;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.backup-desc {
+  font-size: 13px;
+  color: #8b8578;
+  line-height: 1.8;
+  max-width: 620px;
+}
+.backup-count {
+  font-size: 12px;
+  color: #6f6a60;
+  margin-top: 10px;
+  letter-spacing: 1px;
+}
+.backup-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.backup-btn {
+  padding: 11px 28px;
+  border-radius: 22px;
+  border: 1px solid rgba(201,169,110,0.45);
+  background: transparent;
+  color: #cbb884;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all .25s ease;
+}
+.backup-btn:hover {
+  background: rgba(201,169,110,0.15);
+  color: #f0e0b0;
+  border-color: rgba(201,169,110,0.7);
+}
+.backup-btn.primary {
+  background: rgba(201,169,110,0.85);
+  border-color: rgba(201,169,110,0.85);
+  color: #14120e;
+  font-weight: 500;
+}
+.backup-btn.primary:hover {
+  background: #d8bb84;
+  border-color: #d8bb84;
+}
+.backup-btn:focus-visible {
+  outline: 1px solid rgba(201,169,110,0.8);
+  outline-offset: 3px;
+}
+.backup-note {
+  margin-top: 10px;
+  padding-left: 4px;
+  font-size: 12px;
+  color: #6f6a60;
+  letter-spacing: .5px;
+}
+
+/* ===== 查看他人相册（只读模式） ===== */
+.viewer-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  background: rgba(8,8,12,0.94);
+  border-bottom: 1px solid rgba(201,169,110,0.28);
+  backdrop-filter: blur(12px);
+}
+.viewer-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: #cbb884;
+}
+.viewer-tip .badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(201,169,110,0.4);
+  color: #9c8f6f;
+  letter-spacing: 1px;
+}
+.viewer-exit {
+  flex-shrink: 0;
+  padding: 9px 22px;
+  border-radius: 20px;
+  border: 1px solid rgba(201,169,110,0.7);
+  background: rgba(201,169,110,0.9);
+  color: #14120e;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.viewer-exit:hover { background: #d8bb84; }
+body.viewer-mode #app { padding-top: 68px; }
+
+/* ===== 主题切换按钮 ===== */
+.theme-toggle {
+  position: fixed;
+  top: 18px;
+  right: 20px;
+  z-index: 120;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 1px;
+  border: 1px solid rgba(201,169,110,0.45);
+  background: rgba(20,20,26,0.65);
+  color: #e8d5a8;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all .25s ease;
+}
+.theme-toggle:hover { background: rgba(201,169,110,0.2); border-color: rgba(201,169,110,0.75); }
+
+/* ===== 浅色模式的海浪背景 ===== */
+#waves {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  display: none;
+}
+
+/* ===== 浅色模式配色 ===== */
+body.light {
+  background: linear-gradient(180deg, #f7fcff 0%, #e9f4fc 55%, #d8ecf9 100%);
+  color: #24404f;
+}
+body.light #stars { display: none; }
+body.light #waves { display: block; }
+body.light .theme-toggle {
+  background: rgba(255,255,255,0.88);
+  border-color: rgba(120,180,215,0.55);
+  color: #31627e;
+}
+body.light .theme-toggle:hover { background: #fff; border-color: #5697bd; }
+
+body.light .page-header h1 { color: #1f4d66; }
+body.light .page-header p { color: #6d95ab; }
+
+body.light .carousel {
+  border-color: rgba(120,180,215,0.55);
+  box-shadow: 0 18px 45px rgba(96,150,190,0.22);
+}
+body.light .carousel-slide {
+  background-image: none !important;
+  background-color: #e8f3fb;
+  filter: none;
+}
+body.light .arrow {
+  background: rgba(255,255,255,0.8);
+  border-color: rgba(120,180,215,0.55);
+  color: #2f6d8f;
+}
+body.light .arrow:hover { background: #fff; border-color: #5697bd; }
+body.light .dot { background: rgba(120,180,215,0.45); }
+body.light .dot.active { background: #4d93bb; }
+
+body.light .wall-title { color: #4a7c95; }
+body.light .add-small {
+  background: rgba(255,255,255,0.85);
+  border-color: rgba(120,180,215,0.5);
+  color: #31627e;
+}
+body.light .add-small:hover { background: #fff; border-color: #5697bd; }
+
+body.light .photo-card {
+  border-color: #ffffff;
+  box-shadow: 0 10px 26px rgba(96,150,190,0.25);
+}
+body.light .photo-card:hover {
+  border-color: #3f8fb8;
+  box-shadow: 0 16px 38px rgba(70,140,180,0.32), 0 0 26px rgba(80,160,205,0.35);
+}
+body.light .photo-label {
+  background: linear-gradient(transparent, rgba(245,251,255,0.96));
+  color: #2c5d77;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.9);
+}
+body.light .photo-delete {
+  background: rgba(255,255,255,0.9);
+  color: #5a88a0;
+  border-color: rgba(120,180,215,0.5);
+}
+
+body.light .add-btn { border-color: rgba(120,180,215,0.55); background: rgba(255,255,255,0.72); }
+body.light .add-btn .plus, body.light .add-btn .text { color: #5490b6; }
+body.light .empty-hint { color: #7fa3b7; }
+
+body.light .backup-box {
+  border-color: rgba(120,180,215,0.42);
+  background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(233,245,253,0.65));
+  box-shadow: 0 10px 24px rgba(96,150,190,0.14);
+}
+body.light .backup-heading { color: #255c7a; }
+body.light .backup-desc,
+body.light .backup-count,
+body.light .backup-note { color: #7a9fb3; }
+body.light .backup-btn {
+  border-color: rgba(90,150,185,0.5);
+  color: #3b7fa3;
+  background: rgba(255,255,255,0.66);
+}
+body.light .backup-btn:hover { background: rgba(214,236,249,0.95); color: #235c7b; border-color: #4f95bb; }
+body.light .backup-btn.primary { background: #4d93bb; border-color: #4d93bb; color: #ffffff; }
+body.light .backup-btn.primary:hover { background: #3f84ac; border-color: #3f84ac; }
+
+body.light .mood-title { color: #4a7c95; }
+body.light .mood-form {
+  background: rgba(255,255,255,0.9);
+  border-color: rgba(120,180,215,0.32);
+  box-shadow: 0 8px 22px rgba(96,150,190,0.12);
+}
+body.light .mood-form textarea { color: #24404f; }
+body.light .mood-form textarea::placeholder { color: #8aabbf; }
+body.light .mood-upload { color: #7a9fb3; }
+body.light .mood-submit {
+  border-color: rgba(90,150,185,0.5);
+  background: rgba(255,255,255,0.7);
+  color: #3b7fa3;
+}
+body.light .mood-submit:hover { background: #4d93bb; border-color: #4d93bb; color: #fff; }
+body.light .mood-item {
+  background: rgba(255,255,255,0.82);
+  border-color: rgba(120,180,215,0.26);
+}
+body.light .mood-item-text { color: #24404f; }
+body.light .mood-item-time { color: #8fb2c4; }
+body.light .mood-btn {
+  border-color: rgba(120,180,215,0.45);
+  color: #4a7c95;
+  background: rgba(255,255,255,0.62);
+}
+
+body.light footer {
+  background: rgba(255,255,255,0.94);
+  border-top-color: rgba(120,180,215,0.3);
+  color: #6d95ab;
+}
+body.light footer .deco {
+  background: linear-gradient(90deg, transparent, rgba(120,180,215,0.5), transparent);
+}
+
+body.light .viewer-bar {
+  background: rgba(255,255,255,0.94);
+  border-bottom-color: rgba(120,180,215,0.4);
+}
+body.light .viewer-tip { color: #2f6d8f; }
+body.light .viewer-tip .badge { border-color: rgba(120,180,215,0.5); color: #6d95ab; }
+body.light .viewer-exit { background: #4d93bb; border-color: #4d93bb; color: #fff; }
+
+body.light .confirm-box {
+  background: #f8fcff;
+  border-color: rgba(120,180,215,0.5);
+  box-shadow: 0 20px 60px rgba(70,130,170,0.25);
+}
+body.light .confirm-box h3 { color: #255c7a; }
+body.light .confirm-box p { color: #7a9fb3; }
+
+body.light .lightbox { background: rgba(233,244,252,0.97); }
+body.light .lightbox-close,
+body.light .lightbox-nav {
+  background: rgba(255,255,255,0.86);
+  border-color: rgba(120,180,215,0.5);
+  color: #3b7fa3;
+}
 
 /* ===== 隐藏文件选择器 ===== */
 input[type="file"] { display: none; }
 
 /* ===== 响应式 ===== */
 @media (max-width: 1024px) {
-  .wall-grid { columns: 3; column-gap: 14px; }
+  .wall-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
   .carousel { height: 280px; }
 }
 @media (max-width: 768px) {
-  .wall-grid { columns: 2; column-gap: 12px; }
+  .wall-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
   .wall-section { padding: 30px 16px 100px; }
   .carousel { height: 220px; }
   .arrow.prev { left: 10px; width: 36px; height: 36px; font-size: 15px; }
   .arrow.next { right: 10px; width: 36px; height: 36px; font-size: 15px; }
   .page-header h1 { font-size: 24px; letter-spacing: 5px; }
+  .backup-section { padding: 0 16px 24px; }
+  .backup-box { flex-direction: column; align-items: stretch; gap: 18px; padding: 20px 18px; }
+  .backup-desc { max-width: none; }
+  .backup-actions { width: 100%; }
+  .backup-btn { flex: 1; padding: 12px 0; }
 }
 @media (max-width: 480px) {
-  .wall-grid { columns: 2; column-gap: 10px; }
+  .wall-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
   .carousel { height: 180px; }
 }
 </style>
@@ -557,11 +876,24 @@ input[type="file"] { display: none; }
 <div class="custom-cursor" id="cursorRing"></div>
 
 <div id="app">
+  <!-- 只读模式顶部条：查看他人相册时出现 -->
+  <div v-if="viewer.active" class="viewer-bar">
+    <div class="viewer-tip">
+      <span class="badge">只读</span>正在查看他人的相册备份
+    </div>
+    <button class="viewer-exit" @click="exitViewer">返回自己相册</button>
+  </div>
+
   <!-- 全屏星星背景 -->
   <canvas id="stars"></canvas>
 
-  <!-- 隐藏的背景音乐 -->
-  <audio ref="bgm" loop preload="auto" src="assets/海屿你.mp3"></audio>
+  <!-- 主题切换 -->
+  <button v-if="!viewer.active" class="theme-toggle" @click="toggleTheme">
+    {{ theme === 'light' ? '暗色模式' : '浅色模式' }}
+  </button>
+
+  <!-- 隐藏的背景音乐（歌单随机播放，歌单在 JS 里的 playlist 数组） -->
+  <audio ref="bgm" preload="auto"></audio>
 
   <!-- 页面标题 -->
   <div class="page-header">
@@ -572,8 +904,10 @@ input[type="file"] { display: none; }
   <!-- 轮播图 -->
   <div class="carousel-wrap">
     <div class="carousel">
-      <div v-for="(img, i) in banners" :key="i" class="carousel-slide"
-           :style="{ backgroundImage: `url(${img})`, opacity: i === currentBanner ? 1 : 0 }"></div>
+      <template v-for="(img, i) in banners" :key="i">
+        <div class="carousel-slide" :style="{ backgroundImage: `url(${img})`, opacity: i === currentBanner ? 1 : 0 }"></div>
+        <div class="carousel-slide-inner" :style="{ backgroundImage: `url(${img})`, opacity: i === currentBanner ? 1 : 0 }"></div>
+      </template>
     </div>
     <div class="arrow prev" @click="prevBanner">&#10094;</div>
     <div class="arrow next" @click="nextBanner">&#10095;</div>
@@ -587,7 +921,7 @@ input[type="file"] { display: none; }
   <div class="wall-section">
     <div class="wall-header">
       <div class="wall-title">照 片 墙</div>
-      <div style="display:flex;gap:10px">
+      <div v-if="!viewer.active" style="display:flex;gap:10px">
         <button class="add-small" @click="scrollToMood">时光心事</button>
         <button v-if="photos.length > 0" class="add-small" @click="triggerAdd">+ 添加照片</button>
       </div>
@@ -595,25 +929,42 @@ input[type="file"] { display: none; }
 
     <!-- 空状态 -->
     <div v-if="photos.length === 0" class="empty-state">
-      <div class="add-btn" @click="triggerAdd">
+      <div v-if="!viewer.active" class="add-btn" @click="triggerAdd">
         <div class="plus">+</div>
         <div class="text">添加照片</div>
       </div>
-      <div class="empty-hint">点击上方按钮，上传你的第一张照片</div>
+      <div class="empty-hint">{{ viewer.active ? '这份备份里没有照片' : '点击上方按钮，上传你的第一张照片' }}</div>
     </div>
 
     <!-- 照片网格 -->
-    <div v-else class="wall-grid">
+    <div v-else class="wall-grid" ref="wallGrid">
       <div v-for="(p, i) in photos" :key="i" class="photo-card"
            :style="{ animationDelay: (i % 4 * 0.08) + 's' }"
            @click="openLightbox(i)">
         <img :src="p.src" :alt="p.name">
-        <button class="photo-delete" @click.stop="deletePhoto(i)">&times;</button>
+        <button v-if="!viewer.active" class="photo-delete" @click.stop="deletePhoto(i)">&times;</button>
         <div class="photo-label">{{ formatTime(p.createdAt) }}</div>
       </div>
     </div>
 
     <input ref="fileInput" type="file" accept="image/*" multiple @change="onFiles">
+  </div>
+
+  <!-- 备份提示 -->
+  <div v-if="!viewer.active" class="backup-section">
+    <div class="backup-box">
+      <div class="backup-info">
+        <div class="backup-heading">照片只存在这台设备上</div>
+        <div class="backup-desc">换手机、换浏览器或清理浏览器数据后，这里的照片不会跟过去。先导出一份备份，到新设备上再点导入。</div>
+        <div v-if="photos.length || moods.length" class="backup-count">当前 {{ photos.length }} 张照片 · {{ moods.length }} 条心事</div>
+      </div>
+      <div class="backup-actions">
+        <button class="backup-btn primary" @click="exportBackup">导出备份</button>
+        <button class="backup-btn" @click="triggerImport">导入备份</button>
+        <button class="backup-btn" @click="openViewer">查看他人相册</button>
+      </div>
+    </div>
+    <div class="backup-note">别人发给你一份备份文件？点「查看他人相册」，选那个文件就能看，不会动到你自己的照片。</div>
   </div>
 
   <!-- 灯箱 -->
@@ -645,7 +996,7 @@ input[type="file"] { display: none; }
   <!-- 时光心事 -->
   <div class="mood-section">
     <div class="mood-title">时 光 心 事</div>
-    <div class="mood-form">
+    <div v-if="!viewer.active" class="mood-form">
       <textarea v-model="moodText" placeholder="写下此刻的心事..."></textarea>
       <div class="mood-footer">
         <label class="mood-upload">
@@ -667,7 +1018,7 @@ input[type="file"] { display: none; }
           <img :src="moodEditImg" class="mood-item-img">
         </div>
         <div class="mood-item-time">{{ formatTime(m.createdAt) }}</div>
-        <div class="mood-actions">
+        <div v-if="!viewer.active" class="mood-actions">
           <button v-if="editingMood !== i" class="mood-btn" @click="editMood(i)">编辑</button>
           <template v-if="editingMood === i">
             <label class="mood-btn" style="cursor:none">
@@ -690,6 +1041,8 @@ input[type="file"] { display: none; }
     </div>
     <div style="font-size:11px;opacity:.6">{{ uptimeText }}</div>
   </footer>
+  <input ref="importInput" type="file" accept="application/json,.json" @change="onImportFile" style="display:none">
+  <input ref="viewerInput" type="file" accept="application/json,.json" @change="onViewerFile" style="display:none">
 </div>
 
 <script>
@@ -724,17 +1077,45 @@ createApp({
 
       // 灯箱
       lightbox: { show: false, index: 0 },
-      confirm: { show: false, index: -1 }
+      confirm: { show: false, index: -1 },
+
+      // 查看他人相册（只读模式）
+      // 进入时先把相册数据暂存起来，退出时原样还原，保证自己的照片不会被动到
+      viewer: { active: false },
+      savedPhotos: null,
+      savedMoods: null,
+      savedBanner: 0,
+
+      // 主题：dark = 暗色星空（默认），light = 浅色海浪
+      theme: 'dark',
+
+      // 背景音乐歌单：把 mp3 放进 assets 目录后，在下面的数组里补上文件名即可
+      playlist: ['assets/海屿你.mp3'],
+      lastTrack: -1,
+
+      // 导出备份用的「时光相册备份」文件夹句柄，浏览器授权一次后本次打开期间都记着
+      backupDirHandle: null
     };
   },
   mounted() {
+    // 恢复上次选择的主题
+    let savedTheme = 'dark';
+    try { savedTheme = localStorage.getItem('album-theme') || 'dark'; } catch (e) {}
+    this.applyTheme(savedTheme);
     this.startUptime();
     this.initStars();
+    this.initWaves();
     this.startBannerAuto();
     this.tryPlayBgm();
     this.initDB().then(() => { this.loadPhotos(); this.loadMoods(); });
     this.initCustomCursor();
     this.initTilt();
+    // 窗口尺寸变化后重新计算照片墙的行占位
+    let wallTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(wallTimer);
+      wallTimer = setTimeout(() => this.layoutWall(), 200);
+    });
     window.addEventListener('keydown', e => {
       if (!this.lightbox.show) return;
       if (e.key === 'ArrowLeft') this.lightboxPrev();
@@ -802,9 +1183,10 @@ createApp({
       document.addEventListener('click', e => this.spawnRipple(e.clientX, e.clientY));
       this.initTrailCanvas();
     },
-    trailParticles: [],
-    ripples: [],
     initTrailCanvas() {
+      // 粒子/波纹数组必须挂在组件实例上；原先写在选项对象里，this 上取不到，导致拖尾一直报错失效
+      this.trailParticles = [];
+      this.ripples = [];
       const c = document.createElement('canvas');
       c.id = 'trailCanvas';
       c.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99998;';
@@ -818,26 +1200,26 @@ createApp({
         // 粒子
         this.trailParticles = this.trailParticles.filter(p => {
           p.x += p.vx; p.y += p.vy;
-          p.life -= 0.008;
+          p.life -= 0.016;
           if (p.life <= 0) return false;
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = '#ff2020';
-          ctx.fillStyle = `rgba(255,80,80,${p.life})`;
+          ctx.shadowBlur = 5;
+          ctx.shadowColor = '#ff3030';
+          ctx.fillStyle = `rgba(255,90,90,${p.life * 0.75})`;
           ctx.fill();
           ctx.shadowBlur = 0;
           return true;
         });
         // 波纹
         this.ripples = this.ripples.filter(r => {
-          r.r += 3;
-          r.life -= 0.04;
+          r.r += 2.2;
+          r.life -= 0.05;
           if (r.life <= 0) return false;
           ctx.beginPath();
           ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(255,60,60,${r.life * 0.8})`;
-          ctx.lineWidth = 2;
+          ctx.strokeStyle = `rgba(255,70,70,${r.life * 0.5})`;
+          ctx.lineWidth = 1.5;
           ctx.stroke();
           return true;
         });
@@ -846,13 +1228,23 @@ createApp({
       animate();
     },
     spawnTrail(x, y) {
-      for (let i = 0; i < 8; i++) {
+      // 鼠标挪得太近就不生成，避免停在原地时堆成一团
+      if (this.lastTrailX !== undefined) {
+        const dx = x - this.lastTrailX;
+        const dy = y - this.lastTrailY;
+        if (dx * dx + dy * dy < 100) return;   // 10px 以内跳过
+      }
+      this.lastTrailX = x;
+      this.lastTrailY = y;
+      // 屏幕上同时存在的粒子设上限，鼠标甩快了也不会糊满屏
+      if (this.trailParticles.length >= 120) return;
+      for (let i = 0; i < 2; i++) {
         this.trailParticles.push({
-          x: x + (Math.random() - 0.5) * 20,
-          y: y + (Math.random() - 0.5) * 20,
-          vx: (Math.random() - 0.5) * 2,
-          vy: (Math.random() - 0.5) * 2 - 0.5,
-          size: Math.random() * 6 + 3,
+          x: x + (Math.random() - 0.5) * 10,
+          y: y + (Math.random() - 0.5) * 10,
+          vx: (Math.random() - 0.5) * 1.2,
+          vy: (Math.random() - 0.5) * 1.2 - 0.4,
+          size: Math.random() * 2 + 2,
           life: 1
         });
       }
@@ -880,6 +1272,99 @@ createApp({
       });
     },
 
+    // ===== 主题切换（暗色星空 / 浅色海浪） =====
+    applyTheme(t) {
+      this.theme = t;
+      document.body.classList.toggle('light', t === 'light');
+      try { localStorage.setItem('album-theme', t); } catch (e) {}
+      // 换主题后卡片边框粗细变化，重算一次网格
+      this.$nextTick(() => this.layoutWall());
+    },
+    toggleTheme() {
+      this.applyTheme(this.theme === 'light' ? 'dark' : 'light');
+    },
+    // 浅色模式的海浪：几层叠加的正弦波，相位随时间增大，浪头从右往左推
+    initWaves() {
+      const c = document.createElement('canvas');
+      c.id = 'waves';
+      document.body.appendChild(c);
+      const ctx = c.getContext('2d');
+      let W = 0, H = 0;
+      const resize = () => { W = c.width = innerWidth; H = c.height = innerHeight; };
+      resize();
+      window.addEventListener('resize', resize);
+      const layers = [
+        { y: 0.60, amp: 20, len: 220, speed: 0.9,  color: 'rgba(122,182,222,0.18)' },
+        { y: 0.71, amp: 28, len: 290, speed: 1.20, color: 'rgba(98,166,214,0.22)' },
+        { y: 0.82, amp: 36, len: 360, speed: 1.55, color: 'rgba(74,148,202,0.26)' },
+        { y: 0.94, amp: 44, len: 440, speed: 1.95, color: 'rgba(52,130,190,0.30)' }
+      ];
+      let t = 0;
+      const frame = () => {
+        if (document.body.classList.contains('light')) {
+          ctx.clearRect(0, 0, W, H);
+          layers.forEach(L => {
+            const baseY = H * L.y;
+            const wave = p => Math.sin((p + t * L.speed) / L.len * Math.PI * 2);
+            ctx.beginPath();
+            ctx.moveTo(-10, H);
+            for (let x = -10; x <= W + 10; x += 5) {
+              const y = baseY + wave(x) * L.amp
+                      + Math.sin((x + t * L.speed * 1.7) / (L.len * 0.38) * Math.PI * 2) * (L.amp * 0.28);
+              ctx.lineTo(x, y);
+            }
+            ctx.lineTo(W + 10, H);
+            ctx.closePath();
+            ctx.fillStyle = L.color;
+            ctx.fill();
+            // 浪尖的白线
+            ctx.beginPath();
+            for (let x = -10; x <= W + 10; x += 5) {
+              const y = baseY + wave(x) * L.amp;
+              if (x === -10) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+          });
+        }
+        t += 1;
+        requestAnimationFrame(frame);
+      };
+      frame();
+    },
+
+    // ===== 照片墙网格：按图片真实比例算出每张卡占几行 =====
+    layoutWall() {
+      const grid = this.$refs.wallGrid;
+      if (!grid) return;
+      const rowH = 8, gap = 18;
+      const apply = () => {
+        Array.from(grid.children).forEach(card => {
+          const img = card.querySelector('img');
+          if (!img) return;
+          const w = card.offsetWidth || 240;
+          const ratio = (img.naturalWidth && img.naturalHeight)
+            ? (img.naturalHeight / img.naturalWidth)
+            : 1.3;
+          const h = (w - 6) * ratio + 6;          // 6px = 左右边框
+          const span = Math.max(2, Math.ceil((h + gap) / (rowH + gap)));
+          card.style.gridRowEnd = 'span ' + span;
+        });
+      };
+      apply();
+      // 图片解码完成后可能高度有变化，补算一次
+      const imgs = Array.from(grid.querySelectorAll('img'));
+      let pending = imgs.filter(i => !(i.complete && i.naturalWidth)).length;
+      if (pending > 0) {
+        imgs.forEach(i => {
+          if (i.complete && i.naturalWidth) return;
+          i.addEventListener('load', () => { if (--pending === 0) apply(); }, { once: true });
+        });
+        setTimeout(apply, 600);
+      }
+    },
+
     // ===== IndexedDB 持久化存储 =====
     initDB() {
       return new Promise((resolve, reject) => {
@@ -901,7 +1386,12 @@ createApp({
       return new Promise(resolve => {
         const tx = this.db.transaction('photos', 'readonly');
         const req = tx.objectStore('photos').getAll();
-        req.onsuccess = () => { this.photos = req.result || []; resolve(); };
+        req.onsuccess = () => {
+          this.photos = req.result || [];
+          // 照片渲染后重算网格占位，保证排版整齐
+          this.$nextTick(() => this.layoutWall());
+          resolve();
+        };
         req.onerror = () => resolve();
       });
     },
@@ -1020,6 +1510,237 @@ createApp({
       }
       this.editingMood = -1;
     },
+    // ===== 备份导出 / 导入 =====
+    // 照片存在浏览器本地，换设备就看不到，这里提供手动搬运的办法
+    exportBackup() {
+      const txPhotos = this.db.transaction('photos', 'readonly');
+      const reqPhotos = txPhotos.objectStore('photos').getAll();
+      reqPhotos.onsuccess = () => {
+        const photos = reqPhotos.result || [];
+        const txMoods = this.db.transaction('moods', 'readonly');
+        const reqMoods = txMoods.objectStore('moods').getAll();
+        reqMoods.onsuccess = () => {
+          const moods = reqMoods.result || [];
+          // 只保留必要字段，去掉自增 id，导入时重新分配
+          const payload = {
+            app: '时光相册',
+            version: 1,
+            exportedAt: Date.now(),
+            photos: photos.map(p => ({ src: p.src, name: p.name || '', createdAt: p.createdAt || Date.now() })),
+            moods: moods.map(m => ({ text: m.text || '', img: m.img || '', createdAt: m.createdAt || Date.now() }))
+          };
+          // 打上本网站的签名，别处来路不明的文件会被拦下
+          payload.sig = this.signBackup(payload);
+          const name = `时光相册备份-${this.formatTime(Date.now()).slice(0, 10)}.json`;
+          this.saveBackupFile(JSON.stringify(payload), name);
+        };
+      };
+    },
+    // 存备份文件：优先写进「时光相册备份」文件夹，不支持就退回普通下载
+    async saveBackupFile(text, name) {
+      const blob = new Blob([text], { type: 'application/json' });
+      if (window.showDirectoryPicker) {
+        try {
+          let root = this.backupDirHandle || await this.loadDirHandle();
+          // 上次记下的文件夹要再确认一次权限（浏览器规定），不行就重新选
+          if (root) {
+            let ok = false;
+            try {
+              ok = (await root.queryPermission({ mode: 'readwrite' })) === 'granted'
+                || (await root.requestPermission({ mode: 'readwrite' })) === 'granted';
+            } catch (e) { ok = false; }
+            if (!ok) root = null;
+          }
+          if (!root) {
+            // 第一次需要你选一个"放备份的父文件夹"，浏览器只允许这样授权
+            root = await window.showDirectoryPicker({ id: 'album-backup', mode: 'readwrite' });
+            this.backupDirHandle = root;
+            this.saveDirHandle(root);           // 记住，下次打开不用再选
+          }
+          this.backupDirHandle = root;
+          let dir = root;
+          // 父文件夹不叫「时光相册备份」的话，在里面自动建一个（已存在就直接用）
+          if (dir.name !== '时光相册备份') {
+            dir = await dir.getDirectoryHandle('时光相册备份', { create: true });
+          }
+          const fileHandle = await dir.getFileHandle(name, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          alert(`已保存到「时光相册备份」文件夹：${name}`);
+          return;
+        } catch (err) {
+          // 用户取消，或浏览器/环境不支持 → 退回普通下载
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    },
+    // 文件夹句柄单独存一个小库，不动原来的相册数据库（避免影响正式版）
+    openDirDB() {
+      return new Promise(resolve => {
+        try {
+          const req = indexedDB.open('albumBackupDir', 1);
+          req.onupgradeneeded = e => { e.target.result.createObjectStore('handles'); };
+          req.onsuccess = e => resolve(e.target.result);
+          req.onerror = () => resolve(null);
+        } catch (e) { resolve(null); }
+      });
+    },
+    async saveDirHandle(handle) {
+      try {
+        const db = await this.openDirDB();
+        if (!db) return;
+        db.transaction('handles', 'readwrite').objectStore('handles').put(handle, 'dir');
+      } catch (e) {}
+    },
+    async loadDirHandle() {
+      try {
+        const db = await this.openDirDB();
+        if (!db) return null;
+        return await new Promise(resolve => {
+          const req = db.transaction('handles', 'readonly').objectStore('handles').get('dir');
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        });
+      } catch (e) { return null; }
+    },
+    triggerImport() { this.$refs.importInput.click(); },
+    onImportFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        let data = null;
+        try {
+          data = JSON.parse(ev.target.result);
+        } catch (err) {
+          alert('导入失败：这不是有效的备份文件');
+          return;
+        }
+        // 只接受本网站生成的备份文件
+        const msg = this.checkBackup(data);
+        if (msg) {
+          alert('导入失败：' + msg);
+          return;
+        }
+        const legacyTip = data.sig ? '' : '（这份是旧版备份，没有校验标识）';
+        const ok = confirm(
+          `导入会覆盖当前相册${legacyTip}\n当前：${this.photos.length} 张照片、${this.moods.length} 条心事\n` +
+          `备份：${data.photos.length} 张照片、${(data.moods || []).length} 条心事\n\n确定继续吗？`
+        );
+        if (!ok) return;
+        this.restoreBackup(data);
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    },
+    restoreBackup(data) {
+      const tx = this.db.transaction(['photos', 'moods'], 'readwrite');
+      tx.objectStore('photos').clear();
+      tx.objectStore('moods').clear();
+      data.photos.forEach(p => {
+        if (p && p.src) {
+          tx.objectStore('photos').add({ src: p.src, name: p.name || '', createdAt: p.createdAt || Date.now() });
+        }
+      });
+      (data.moods || []).forEach(m => {
+        if (m) {
+          tx.objectStore('moods').add({ text: m.text || '', img: m.img || '', createdAt: m.createdAt || Date.now() });
+        }
+      });
+      tx.oncomplete = () => {
+        this.loadPhotos().then(() => this.loadMoods()).then(() => {
+          alert(`导入完成：${this.photos.length} 张照片、${this.moods.length} 条心事`);
+        });
+      };
+      tx.onerror = () => alert('导入失败：数据库写入出错，请重试');
+    },
+    // ===== 备份文件签名：确认「这份文件是本网站生成的」 =====
+    // 这是一道格式校验，能挡住别处来路不明或改过的文件；不是加密，
+    // 文件里的照片没有加密，用记事本打开仍能看懂。
+    signBackup(payload) {
+      const photos = payload.photos || [];
+      const moods = payload.moods || [];
+      const firstLen = photos.length && photos[0].src ? photos[0].src.length : 0;
+      const lastLen = photos.length ? (photos[photos.length - 1].src || '').length : 0;
+      const raw = [payload.app, payload.version, payload.exportedAt,
+                   photos.length, moods.length, firstLen, lastLen,
+                   'shiguang-xiangce-2026'].join('|');
+      let h1 = 0x811c9dc5, h2 = 0x1505c0de;
+      for (let i = 0; i < raw.length; i++) {
+        const c = raw.charCodeAt(i);
+        h1 = ((h1 ^ c) * 0x01000193) >>> 0;
+        h2 = (((h2 + c * (i + 1)) ^ (h1 >>> 7)) * 0x27d4eb2d) >>> 0;
+      }
+      return (h1.toString(16) + h2.toString(16)).toUpperCase();
+    },
+    // 校验备份文件，返回空字符串代表通过，否则返回给用户看的错误提示
+    checkBackup(data) {
+      if (!data || typeof data !== 'object') return '这不是一份备份文件';
+      if (data.app !== '时光相册' || !Array.isArray(data.photos)) {
+        return '这不是「时光相册」生成的备份文件，无法打开';
+      }
+      if (data.sig) {
+        const expect = this.signBackup(data);
+        if (String(data.sig).toUpperCase() !== expect) {
+          return '备份文件校验未通过：内容被改动过，或者不是本网站生成的';
+        }
+      }
+      return '';
+    },
+
+    // ===== 查看他人相册（只读） =====
+    openViewer() { this.$refs.viewerInput.click(); },
+    onViewerFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        let data = null;
+        try {
+          data = JSON.parse(ev.target.result);
+        } catch (err) {
+          alert('读取失败：这不是有效的备份文件');
+          return;
+        }
+        const msg = this.checkBackup(data);
+        if (msg) { alert(msg); return; }
+        // 先把相册里自己的数据暂存，退出时原样还原，保证不会被别人的备份覆盖
+        this.savedPhotos = this.photos;
+        this.savedMoods = this.moods;
+        this.savedBanner = this.currentBanner;
+        this.photos = data.photos.filter(p => p && p.src)
+          .map(p => ({ src: p.src, name: p.name || '', createdAt: p.createdAt || Date.now() }));
+        this.moods = (data.moods || []).filter(m => m)
+          .map(m => ({ text: m.text || '', img: m.img || '', createdAt: m.createdAt || Date.now() }));
+        this.currentBanner = 0;
+        this.viewer.active = true;
+        document.body.classList.add('viewer-mode');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    },
+    exitViewer() {
+      this.viewer.active = false;
+      this.photos = this.savedPhotos || [];
+      this.moods = this.savedMoods || [];
+      this.currentBanner = this.savedBanner || 0;
+      this.savedPhotos = null;
+      this.savedMoods = null;
+      this.lightbox.show = false;
+      this.moodLightbox.show = false;
+      document.body.classList.remove('viewer-mode');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
     formatTime(ts) {
       if (!ts) return '';
       const d = new Date(ts);
@@ -1034,21 +1755,38 @@ createApp({
     lightboxPrev() { this.lightbox.index = (this.lightbox.index - 1 + this.photos.length) % this.photos.length; },
     lightboxNext() { this.lightbox.index = (this.lightbox.index + 1) % this.photos.length; },
 
-    // ===== 背景音乐（隐藏播放器，自动循环） =====
+    // ===== 背景音乐（歌单随机播放，一首放完自动换下一首） =====
     tryPlayBgm() {
       const audio = this.$refs.bgm;
       if (!audio) return;
       audio.volume = 0.5;
-      // 浏览器限制自动播放，首次用户交互时尝试播放
+      audio.loop = false;
+      // 一首放完自动换下一首随机曲目
+      audio.addEventListener('ended', () => this.playRandomTrack());
+      // 浏览器限制自动播放，首次用户交互时开始（已在播放就不再重复触发）
       const play = () => {
-        audio.play().catch(() => {});
-        document.removeEventListener('click', play);
-        document.removeEventListener('keydown', play);
+        if (!audio.paused) {
+          document.removeEventListener('click', play);
+          document.removeEventListener('keydown', play);
+          return;
+        }
+        this.playRandomTrack();
       };
-      audio.play().catch(() => {
-        document.addEventListener('click', play);
-        document.addEventListener('keydown', play);
-      });
+      this.playRandomTrack();
+      document.addEventListener('click', play);
+      document.addEventListener('keydown', play);
+    },
+    playRandomTrack() {
+      const audio = this.$refs.bgm;
+      if (!audio || !this.playlist.length) return;
+      let idx = 0;
+      if (this.playlist.length > 1) {
+        // 避免连着放同一首
+        do { idx = Math.floor(Math.random() * this.playlist.length); } while (idx === this.lastTrack);
+      }
+      this.lastTrack = idx;
+      audio.src = this.playlist[idx];
+      audio.play().catch(() => {});
     },
 
     // ===== 星星粒子 =====
