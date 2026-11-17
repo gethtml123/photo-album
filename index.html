@@ -223,6 +223,38 @@ body {
   letter-spacing: 1px;
 }
 
+/* 墙尾的「+ 添加照片」卡片：滑到底也能直接加照片，不用再翻回顶部 */
+.add-card {
+  grid-row-end: span 9;              /* 固定约 216px 高，和照片卡差不多 */
+  border-radius: 14px;
+  border: 2px dashed rgba(201,169,110,0.38);
+  background: rgba(201,169,110,0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: none;
+  transition: border-color .3s, background .3s, box-shadow .3s, transform .3s;
+}
+.add-card:hover {
+  border-color: rgba(201,169,110,0.85);
+  background: rgba(201,169,110,0.14);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(201,169,110,0.2);
+}
+.add-card .plus {
+  font-size: 42px;
+  font-weight: 200;
+  line-height: 1;
+  color: rgba(201,169,110,0.65);
+}
+.add-card .text {
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: rgba(201,169,110,0.7);
+}
+
 /* 照片墙：等宽网格 + 按图片比例自动占行，避免照片一多就高低错乱 */
 .wall-grid {
   display: grid;
@@ -762,6 +794,9 @@ body.light .photo-delete {
 
 body.light .add-btn { border-color: rgba(120,180,215,0.55); background: rgba(255,255,255,0.72); }
 body.light .add-btn .plus, body.light .add-btn .text { color: #5490b6; }
+body.light .add-card { border-color: rgba(90,150,185,0.45); background: rgba(255,255,255,0.78); }
+body.light .add-card:hover { border-color: #4d93bb; background: #fff; box-shadow: 0 12px 26px rgba(96,150,190,0.2); }
+body.light .add-card .plus, body.light .add-card .text { color: #4a8fb4; }
 body.light .empty-hint { color: #7fa3b7; }
 
 body.light .backup-box {
@@ -944,6 +979,11 @@ input[type="file"] { display: none; }
         <img :src="p.src" :alt="p.name">
         <button v-if="!viewer.active" class="photo-delete" @click.stop="deletePhoto(i)">&times;</button>
         <div class="photo-label">{{ formatTime(p.createdAt) }}</div>
+      </div>
+      <!-- 墙尾的添加入口：滑到底也能直接加照片，不用再翻回顶部 -->
+      <div v-if="!viewer.active" class="add-card" @click="triggerAdd">
+        <div class="plus">+</div>
+        <div class="text">添加照片</div>
       </div>
     </div>
 
