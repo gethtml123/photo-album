@@ -320,6 +320,34 @@ body {
 .photo-card:hover .photo-delete { opacity: 1; }
 .photo-delete:hover { background: rgba(220,50,50,0.9); }
 
+/* 手机端左滑删除：红色按钮从右侧滑进来 */
+.swipe-del {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 84px;
+  border: none;
+  background: linear-gradient(90deg, #b5342a, #e0574a);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateX(101%);
+  transition: transform .25s ease;
+  cursor: none;
+  z-index: 6;
+}
+.photo-card.swiped .swipe-del { transform: translateX(0); }
+.photo-card.swiped { border-color: #e0574a; }
+@media (hover: none) {
+  .photo-delete { display: none; }   /* 触屏设备没 hover，统一改用左滑 */
+}
+@media (max-width: 768px) {
+  .swipe-del { width: 72px; font-size: 13px; letter-spacing: 1px; }
+}
+
 /* 删除确认弹窗 */
 .confirm-overlay {
   position: fixed; inset: 0;
@@ -974,11 +1002,15 @@ input[type="file"] { display: none; }
     <!-- 照片网格 -->
     <div v-else class="wall-grid" ref="wallGrid">
       <div v-for="(p, i) in photos" :key="i" class="photo-card"
+           :class="{ swiped: swipedIndex === i }"
            :style="{ animationDelay: (i % 4 * 0.08) + 's' }"
-           @click="openLightbox(i)">
+           @click="onPhotoClick($event, i)"
+           @touchstart="onCardTouchStart($event, i)"
+           @touchend="onCardTouchEnd($event, i)">
         <img :src="p.src" :alt="p.name">
         <button v-if="!viewer.active" class="photo-delete" @click.stop="deletePhoto(i)">&times;</button>
         <div class="photo-label">{{ formatTime(p.createdAt) }}</div>
+        <button v-if="!viewer.active" class="swipe-del" @click.stop="deletePhoto(i)">删除</button>
       </div>
       <!-- 墙尾的添加入口：滑到底也能直接加照片，不用再翻回顶部 -->
       <div v-if="!viewer.active" class="add-card" @click="triggerAdd">
@@ -1018,8 +1050,8 @@ input[type="file"] { display: none; }
   <!-- 删除确认弹窗 -->
   <div v-if="confirm.show" class="confirm-overlay" @click.self="confirm.show = false">
     <div class="confirm-box">
-      <h3>删除照片</h3>
-      <p>确定要删除这张照片吗？删除后无法恢复。</p>
+      <h3>{{ confirm.type === 'mood' ? '删除心事' : '删除照片' }}</h3>
+      <p>{{ confirm.type === 'mood' ? '确定要删除这条心事吗？删除后无法恢复。' : '确定要删除这张照片吗？删除后无法恢复。' }}</p>
       <div class="confirm-btns">
         <button class="confirm-cancel" @click="confirm.show = false">取消</button>
         <button class="confirm-ok" @click="doDelete">删除</button>
@@ -1117,7 +1149,12 @@ createApp({
 
       // 灯箱
       lightbox: { show: false, index: 0 },
-      confirm: { show: false, index: -1 },
+      confirm: { show: false, type: 'photo', index: -1 },
+
+      // 手机端左滑删除：记录当前划开的那张卡、以及手指起点
+      swipedIndex: -1,
+      swipeStart: null,
+      lastSwipeTime: 0,
 
       // 查看他人相册（只读模式）
       // 进入时先把相册数据暂存起来，退出时原样还原，保证自己的照片不会被动到
@@ -1456,16 +1493,31 @@ createApp({
       });
     },
     deletePhoto(i) {
-      this.confirm = { show: true, index: i };
+      this.swipedIndex = -1;
+      this.confirm = { show: true, type: 'photo', index: i };
     },
     doDelete() {
       const i = this.confirm.index;
+      if (this.confirm.type === 'mood') {
+        // 删心事
+        const mood = this.moods[i];
+        this.moods.splice(i, 1);
+        if (mood && mood.id !== undefined && this.db) {
+          this.db.transaction('moods', 'readwrite').objectStore('moods').delete(mood.id);
+        }
+        this.editingMood = -1;
+        this.confirm.show = false;
+        return;
+      }
+      // 删照片
       const photo = this.photos[i];
       this.photos.splice(i, 1);
       if (photo && photo.id !== undefined && this.db) {
         this.db.transaction('photos', 'readwrite').objectStore('photos').delete(photo.id);
       }
+      this.swipedIndex = -1;
       this.confirm.show = false;
+      this.$nextTick(() => this.layoutWall());
     },
 
     // ===== 轮播 =====
@@ -1542,13 +1594,9 @@ createApp({
     openImgLightbox(src) {
       this.moodLightbox = { show: true, src };
     },
+    // 点「删除」先弹确认，确认后在 doDelete 里真正删掉
     deleteMood(i) {
-      const mood = this.moods[i];
-      this.moods.splice(i, 1);
-      if (mood && mood.id !== undefined && this.db) {
-        this.db.transaction('moods', 'readwrite').objectStore('moods').delete(mood.id);
-      }
-      this.editingMood = -1;
+      this.confirm = { show: true, type: 'mood', index: i };
     },
     // ===== 备份导出 / 导入 =====
     // 照片存在浏览器本地，换设备就看不到，这里提供手动搬运的办法
@@ -1791,6 +1839,34 @@ createApp({
       return `${d.getFullYear()}-${m}-${day} ${h}:${min}`;
     },
     openLightbox(i) { this.lightbox = { show: true, index: i }; },
+
+    // 手机端：照片卡从右往左划，划出红色删除按钮
+    onPhotoClick(e, i) {
+      // 刚划完时浏览器可能补发一个 click，这里挡掉，免得自动把删除按钮收回去
+      if (Date.now() - this.lastSwipeTime < 350) return;
+      // 已经划开的卡片，点一下先收回去，不打开大图
+      if (this.swipedIndex === i) { this.swipedIndex = -1; return; }
+      this.openLightbox(i);
+    },
+    onCardTouchStart(e, i) {
+      const t = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
+      if (!t) return;
+      this.swipeStart = { x: t.clientX, y: t.clientY, i };
+    },
+    onCardTouchEnd(e, i) {
+      const s = this.swipeStart;
+      this.swipeStart = null;
+      if (!s || s.i !== i || this.viewer.active) return;
+      const t = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
+      if (!t) return;
+      const dx = t.clientX - s.x;
+      const dy = t.clientY - s.y;
+      // 横向滑够远、且比上下滑动更明显，才判定为左滑，避免滚动页面时误触
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        this.swipedIndex = dx < 0 ? i : -1;
+        this.lastSwipeTime = Date.now();
+      }
+    },
     closeLightbox() { this.lightbox.show = false; },
     lightboxPrev() { this.lightbox.index = (this.lightbox.index - 1 + this.photos.length) % this.photos.length; },
     lightboxNext() { this.lightbox.index = (this.lightbox.index + 1) % this.photos.length; },
